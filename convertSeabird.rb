@@ -211,7 +211,7 @@ module Couch
          @ownership_res = ownership_hash[(@ownershipID.to_i)-1]
 
         #Store index for all matching count entries
-         @count_arr = []
+       #  @count_arr = []
 
          #Need to find the matching entries in the count database
          for j in 0..count_size-1 do
@@ -243,12 +243,12 @@ module Couch
 
 
                #Create a new object - find persons
-               @people_arr = []
+      #         @people_arr = []
                #Get the countID, one number
-               @count_countID = @count_row[:countID]
+         #      @count_countID = @count_row[:countID]
 
                #need to find the persons connected to the countID number without SQL
-               for k in 0..colonycountobserver_hash.size-1 do
+=begin               for k in 0..colonycountobserver_hash.size-1 do
                    @colcount_row = colonycountobserver_hash[k]
                    if @colcount_row[:CountID].eql? @count_countID
                        @count_observerID = @colcount_row[:ObserverID]  #Countobserver is  personID
@@ -275,6 +275,7 @@ module Couch
                         end
                     end
                 end
+=end
 
                 #BreedingID converted
                 @breedingID =  @count_row[:breedingID]
@@ -302,7 +303,6 @@ module Couch
                 @species_res = species_hash[(@speciesID.to_i)-1]
 
 
-
                #Create a new object and insert into object array
                @count_obj = {
                 :access_id => @count_row[:countID],
@@ -320,17 +320,15 @@ module Couch
                 :useful => @count_row[:useful] == 1 ? true : false,
                 :reference => @reference_obj,
                 :comment =>clean_res(@count_row[:comments]),
-                :people => @people_arr == [] ? nil : @people_arr
+              #  :people => @people_arr == [] ? nil : @people_arr
               }
 
                 #remove nil values
                 @count_obj.reject! {|k,v| v.nil?}
 
-              @count_arr << @count_obj
+             # @count_arr << @count_obj
 
-            end  #if
 
-         end #for
 
 
          #Create a new colony object
@@ -358,28 +356,49 @@ module Couch
                 :area => (@colony_row[:area]).to_i > -1? @colony_row[:area]:nil,
                 :confirmed => (@colony_row[:confirmed]).to_i > -1? @colony_row[:confirmed] : nil,
                 :map => @colony_row[:map],
-                :catching => @colony_row[:catching] == 1 ? true:false,
+               # :catching => @colony_row[:catching] == 1 ? true:false,
                 :reference => @reference_colony_obj,
                 :comment => clean_res(@colony_row[:comments]),
                 :geometry => @geometry,
-                :count => @count_arr == [] ? nil : @count_arr,
                 #:histrorical_colony => @colony_row[:HistoricalComment],
                 :colony_area => (@colony_row[:MultiPoints])? false:true,
                 :created => timestamp,
                 :updated => timestamp,
                 :created_by => user,
-                :updated_by => user
+                :updated_by => user,
+                 #:count => @count_obj == [] ? nil : @count_obj,
+
+                :access_id => @count_obj[:access_id] ? @count_obj[:access_id] : nil,
+                :species =>  @count_obj[:species] ? @count_obj[:species] : nil,
+                :start_date => @count_obj[:start_date] ? @count_obj[:start_date] : nil,
+                :end_date => @count_obj[:end_date] ? @count_obj[:end_date] : nil,
+                :mean => @count_obj[:mean]  ? @count_obj[:mean] : nil,
+                :max => @count_obj[:max] ? @count_obj[:max] : nil,
+                :min => @count_obj[:min] ? @count_obj[:min] : nil,
+                :accuracy => @count_obj[:accuracy] ? @count_obj[:accuracy] : nil,
+                :unit => @count_obj[:unit] ? @count_obj[:unit] : nil,
+                :method => @count_obj[:method] ? @count_obj[:method] : nil,
+                :platform => @count_obj[:platform] ? @count_obj[:platform] : nil,
+                :breeding => @count_obj[:breeding] ? @count_obj[:breeding] : nil,
+                :useful => @count_obj[:useful] ? @count_obj[:useful] : nil,
+                :reference => @count_obj[:reference] ? @count_obj[:reference] : nil,
+                :comment => @count_obj[:comment] ? @count_obj[:comment] : nil
+              #  :people => @people_arr == [] ? nil : @people_arr
+
         }
 
     #remove nil values
     @colony_obj.reject! {|k,v| v.nil?}
 
-    puts @colony_obj
+   # puts @colony_obj
 
     #Post coursetype
     doc = @colony_obj.to_json
 
     res2 = server.post("/"+ Couch::Config::COUCH_SEABIRD + "/", doc, user, password)
+
+           end  #if
+    end #for
 
   end
 
