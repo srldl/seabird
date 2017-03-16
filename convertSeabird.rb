@@ -21,10 +21,10 @@ module Couch
   class ConvertSeabird
 
     #Set server
-    host = Couch::Config::HOST2
-    port = Couch::Config::PORT2
-    password = Couch::Config::PASSWORD2
-    user = Couch::Config::USER2
+    host = Couch::Config::HOST1
+    port = Couch::Config::PORT1
+    password = Couch::Config::PASSWORD1
+    user = Couch::Config::USER1
 
     #Change the incoming string into GeoJSON object
     def self.createGeoJSON(inputStr)
@@ -69,10 +69,6 @@ module Couch
             return nil
          end
     end
-
-
-
-
 
 
     #Get ready to put into database
@@ -121,6 +117,8 @@ module Couch
          #Only transfer data with regionID = 7, aka Svalbard"
          if (@colony_row[:regionID].to_i == 7)
 
+
+
          #Find the values for the colony object
           @conservation_type_res = nil
          #need to find the Colonyconservation connected to the countID number
@@ -135,18 +133,13 @@ module Couch
 
           @island_obj = nil
           #If islandID is 0, there is no inlandinfo commected
+
           if (@colony_row[:IslandID]).to_i > 0
               island_numb = @colony_row[:IslandID]
-              @island_row = islandinfo_hash[island_numb.to_i-1]
-              @island_obj = {
-                 :access_id => @island_row[:access_id],
-                 :island => @island_row[:island],
-                 :size => (@island_row[:size].to_i > 0)? @island_row[:size] : nil,
-                 :archipelago => @island_row[:archipelago] == "-1" ? @island_row[:archipelago] : nil
-              }
 
+              @island_obj = islandinfo_hash[island_numb.to_i-1]
               #remove nil values
-              @island_obj.reject! {|k,v| v.nil?}
+              #@island_obj.reject! {|k,v| v.nil?}
           end
 
 
@@ -214,13 +207,14 @@ module Couch
        #  @count_arr = []
 
          #Need to find the matching entries in the count database
-         for j in 0..count_size-1 do
+
+ for j in 0..count_size-1 do
             @count_row = count_hash[j]
 
             #If colony match the colony where the counting was carried out..
             if @colony_row[:ColonyID].eql? @count_row[:colonyID]
 
-              #Create a new object - start with reference
+=begin        #Create a new object - start with reference
               @reference_obj = nil
               @refID = @count_row[:CountReference]
               for r in 0..reference_hash.size-1 do
@@ -240,7 +234,7 @@ module Couch
                   @reference_obj.reject! {|k,v| v.nil?}
                end
               end
-
+=end
 
                #Create a new object - find persons
       #         @people_arr = []
@@ -302,7 +296,6 @@ module Couch
 
                 @species_res = species_hash[(@speciesID.to_i)-1]
 
-
                #Create a new object and insert into object array
                @count_obj = {
                 :access_id => @count_row[:countID],
@@ -310,16 +303,16 @@ module Couch
                 :start_date => @start_date,
                 :end_date => @end_date,
                 :mean => @count_row[:mean].to_i > 0 ? @count_row[:mean].to_i : nil,
-                :max => @count_row[:max].to_i > 0 ? @count_row[:max] : nil,
-                :min => @count_row[:min].to_i > 0 ? @count_row[:min] : nil,
+                :max => @count_row[:max].to_i > 0 ? @count_row[:max].to_i : nil,
+                :min => @count_row[:min].to_i > 0 ? @count_row[:min].to_i : nil,
                 :accuracy => (@count_row[:accuracy]).to_i == 1 ? 'exactly' : 'rough estimate',
                 :unit => @unit_res[:unit].downcase,
                 :method => @methods_res[:methodsName].downcase,
                 :platform => @platform_res[:platform],
                 :breeding => @breeding_res[:phase].downcase,
                 :useful => @count_row[:useful] == 1 ? true : false,
-                :reference => @reference_obj,
-                :comment =>clean_res(@count_row[:comments]),
+               #:reference => @reference_obj,
+                :count_comment =>clean_res(@count_row[:comments]),
               #  :people => @people_arr == [] ? nil : @people_arr
               }
 
@@ -328,12 +321,9 @@ module Couch
 
              # @count_arr << @count_obj
 
-
-
-
          #Create a new colony object
          @colony_obj = {
-                :schema => 'http://api.npolar.no/schema/seabird-colony.json',
+                :colony_reference => @reference_colony_obj,
                 :collection => 'seabird-colony',
                 :lang => 'en',
                 :access_id => @colony_row[:ColonyID],
@@ -348,26 +338,23 @@ module Couch
                 :location_accuracy => @positionaccuracy_res[:PositionAccuracy],
                 :colony_type => @colonytype_res[:ColonyType].downcase,
                 :ownership => @ownership_res[:ownership].downcase,
-                :island => @island_obj,
                 :length => (@colony_row[:length]).to_i > 0? ((@colony_row[:length]).to_i) : nil,
                 :distance => (@colony_row[:distance]).to_i > -1? (@colony_row[:distance]).to_i : nil,
-                :distance_mainland => @colony_row[:DistanceMainland].to_i > 0? @colony_row[:DistanceMainland]:nil,
+                :distance_mainland => @colony_row[:DistanceMainland].to_i > 0? @colony_row[:DistanceMainland].to_i : nil,
                 :exposure => @colony_row[:exposure],
                 :area => (@colony_row[:area]).to_i > -1? @colony_row[:area]:nil,
                 :confirmed => (@colony_row[:confirmed]).to_i > -1? @colony_row[:confirmed] : nil,
                 :map => @colony_row[:map],
                # :catching => @colony_row[:catching] == 1 ? true:false,
-                :reference => @reference_colony_obj,
                 :comment => clean_res(@colony_row[:comments]),
                 :geometry => @geometry,
-                #:histrorical_colony => @colony_row[:HistoricalComment],
+               # :historical_colony => @colony_row[:HistoricalColony], #ADD THIS NEXT TIME
                 :colony_area => (@colony_row[:MultiPoints])? false:true,
                 :created => timestamp,
                 :updated => timestamp,
                 :created_by => user,
                 :updated_by => user,
                  #:count => @count_obj == [] ? nil : @count_obj,
-
                 :access_id => @count_obj[:access_id] ? @count_obj[:access_id] : nil,
                 :species =>  @count_obj[:species] ? @count_obj[:species] : nil,
                 :start_date => @count_obj[:start_date] ? @count_obj[:start_date] : nil,
@@ -380,29 +367,27 @@ module Couch
                 :method => @count_obj[:method] ? @count_obj[:method] : nil,
                 :platform => @count_obj[:platform] ? @count_obj[:platform] : nil,
                 :breeding => @count_obj[:breeding] ? @count_obj[:breeding] : nil,
-                :useful => @count_obj[:useful] ? @count_obj[:useful] : nil,
+                :useful => @count_obj[:useful] ? false : true, #Switch
                 :reference => @count_obj[:reference] ? @count_obj[:reference] : nil,
-                :comment => @count_obj[:comment] ? @count_obj[:comment] : nil
-              #  :people => @people_arr == [] ? nil : @people_arr
-
+                :count_comment => @count_obj[:count_comment] ? @count_obj[:count_comment] : nil,
+                :island => @island_obj ? @island_obj[:island] :nil,
+                :island_size => @island_obj ? @island_obj[:size] : nil,
+                :island_archipelago => @island_obj ? @island_obj[:archipelago] : nil
         }
+
 
     #remove nil values
     @colony_obj.reject! {|k,v| v.nil?}
-
-   # puts @colony_obj
 
     #Post coursetype
     doc = @colony_obj.to_json
 
     res2 = server.post("/"+ Couch::Config::COUCH_SEABIRD + "/", doc, user, password)
 
+end #if
+end #count
            end  #if
     end #for
-
-  end
-
- end #colony
 
 
 
